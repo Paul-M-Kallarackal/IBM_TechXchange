@@ -2,3 +2,4 @@ flask
 flask-cors
 requests
 ibm-watsonx-ai
+python-dotenv
