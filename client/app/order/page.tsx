@@ -17,18 +17,18 @@ const initialOffers = [
 
 export default function OffersPage() {
   const [offers, setOffers] = useState(initialOffers)
-  const [selectedOffer, setSelectedOffer] = useState(null)
+  const [selectedOffer, setSelectedOffer] = useState<null | { id: number; client: string; project: string; amount: number; deadline: string; }>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [acceptanceMessage, setAcceptanceMessage] = useState("")
   const { toast } = useToast()
 
-  const handleAccept = (offer) => {
-    setSelectedOffer(offer)
+  const handleAccept = (offer: { id: number; client: string; project: string; amount: number; deadline: string; }) => {
+    setSelectedOffer(null)
     setAcceptanceMessage(`Dear ${offer.client},\n\nI am pleased to accept your offer for the "${offer.project}" project. I look forward to working with you and delivering excellent results.\n\nBest regards,\n[Your Name]`)
     setIsModalOpen(true)
   }
 
-  const handleDecline = (offerId) => {
+  const handleDecline = (offerId: number) => {
     setOffers(offers.filter(offer => offer.id !== offerId))
     toast({
       title: "Offer Declined",
@@ -39,7 +39,7 @@ export default function OffersPage() {
   const handleSendAcceptance = () => {
     // Here you would typically send the acceptance message to the client
     // For now, we'll just close the modal and remove the offer from the list
-    setOffers(offers.filter(offer => offer.id !== selectedOffer.id))
+    setOffers(offers.filter(offer => selectedOffer && offer.id !== selectedOffer.id))
     setIsModalOpen(false)
     toast({
       title: "Offer Accepted",

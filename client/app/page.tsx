@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Mountain, CheckCircle } from "lucide-react"
+import { Mountain } from "lucide-react"
 
 export default function LandingPage() {
   return (
@@ -32,7 +31,7 @@ export default function LandingPage() {
                   Welcome to Moriatz
                 </h1>
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Empowering freelancers to 10x their productivity using AI. Get started today and make your clients happy. Quicker, faster - it's almost criminal.
+                  Empowering freelancers to 10x their productivity using AI. Get started today and make your clients happy. Quicker, faster - it&rsquo;s almost criminal.
                 </p>
               </div>
               <div className="space-x-4">
