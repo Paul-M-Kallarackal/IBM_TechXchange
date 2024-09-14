@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
+import Navbar from '@/components/ui/Navbar'
 
 // Mock data for offers
 const initialOffers = [
@@ -48,7 +49,9 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <>
+    <Navbar />
+    <div className="container mx-20 py-10 ">
       <h1 className="text-2xl font-bold mb-5">Current Offers</h1>
       <Table>
         <TableHeader>
@@ -93,5 +96,6 @@ export default function OffersPage() {
 
       <Toaster />
     </div>
+    </>
   )
 }

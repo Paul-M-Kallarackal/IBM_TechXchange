@@ -1,15 +1,11 @@
 "use client";
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import Navbar from "@/components/ui/Navbar"
 import {
   Dialog,
   DialogContent,
@@ -18,11 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { CornerDownLeft, Mic, Paperclip, Upload } from "lucide-react"
+import { CornerDownLeft, Upload } from "lucide-react"
 
 export default function ChatInterface() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [messages, setMessages] = useState<{ type: 'user' | 'bot', content: string }[]>([])
+  const [inputMessage, setInputMessage] = useState('')
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -34,105 +32,95 @@ export default function ChatInterface() {
   const handleUploadSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsUploading(true)
-
-    // Simulating file upload to backend
     await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Here you would typically send the files to your backend
     console.log("Files to upload:", uploadedFiles)
-
     setIsUploading(false)
     setUploadedFiles([])
   }
 
+  const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (inputMessage.trim()) {
+      setMessages([...messages, { type: 'user', content: inputMessage }])
+      setInputMessage('')
+      setTimeout(() => {
+        setMessages(prevMessages => [...prevMessages, { type: 'bot', content: 'Understood' }])
+      }, 500)
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4">
-        <h1 className="text-xl font-semibold">Chat Interface</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Upload className="h-4 w-4" />
-              <span className="sr-only">Upload files</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-white">
-            <DialogHeader>
-              <DialogTitle>Upload Files</DialogTitle>
-              <DialogDescription>
-                Select files to upload to your backend.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUploadSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="file-upload">Choose files</Label>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="mt-1"
-                />
-              </div>
-              {uploadedFiles.length > 0 && (
-                <div>
-                  <p className="font-medium">Selected files:</p>
-                  <ul className="list-disc pl-5">
-                    {uploadedFiles.map((file, index) => (
-                      <li key={index}>{file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <Button type="submit" disabled={isUploading || uploadedFiles.length === 0}>
-                {isUploading ? "Uploading..." : "Upload"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </header>
+      <Navbar />
       <main className="flex-1 overflow-auto p-4">
-        {/* Chat messages would go here */}
-        <div className="space-y-4">
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Your chat messages will appear here.</p>
+        <ScrollArea className="h-full">
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`p-2 rounded-lg ${
+                  message.type === 'user' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted'
+                } max-w-[80%] break-words`}
+              >
+                {message.content}
+              </div>
+            ))}
           </div>
-        </div>
+        </ScrollArea>
       </main>
-      <footer className="border-t bg-background p-4">
-        <form className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Textarea
-              placeholder="Type your message here..."
-              className="min-h-[80px] resize-none pr-12 text-base"
-            />
-            <div className="absolute bottom-1 right-1 flex space-x-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
-                    <Paperclip className="h-4 w-4" />
-                    <span className="sr-only">Attach file</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Attach file</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
-                    <Mic className="h-4 w-4" />
-                    <span className="sr-only">Use microphone</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Use microphone</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            </div>
-          </div>
-          <Button type="submit" size="icon" className="h-[80px]">
+      <footer className="border-t bg-background p-2">
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Type your message here..."
+            className="flex-1"
+          />
+          <Button type="submit" size="icon" className="h-10">
             <CornerDownLeft className="h-4 w-4" />
             <span className="sr-only">Send message</span>
           </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon" className="h-10">
+                <Upload className="h-4 w-4" />
+                <span className="sr-only">Upload files</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white">
+              <DialogHeader>
+                <DialogTitle>Upload Files</DialogTitle>
+                <DialogDescription>
+                  Select files to upload to your backend.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleUploadSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="file-upload-footer">Choose files</Label>
+                  <Input
+                    id="file-upload-footer"
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="mt-1"
+                  />
+                </div>
+                {uploadedFiles.length > 0 && (
+                  <div>
+                    <p className="font-medium">Selected files:</p>
+                    <ul className="list-disc pl-5">
+                      {uploadedFiles.map((file, index) => (
+                        <li key={index}>{file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <Button type="submit" disabled={isUploading || uploadedFiles.length === 0}>
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </form>
       </footer>
     </div>

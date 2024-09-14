@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
 import { ChevronDown, ChevronUp, DollarSign, Calendar } from 'lucide-react'
+import Navbar from '@/components/ui/Navbar';
 
 // Mock data for projects and tasks
 const projects = [
@@ -53,8 +54,11 @@ export default function Dashboard(): React.JSX.Element {
   const [openProject, setOpenProject] = useState<number | null>(null)
 
   return (
+    <>
+      <Navbar />
+
     <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold mb-8">Freelancer Dashboard</h1>
+    
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <Card key={project.id} className="w-full">
@@ -112,5 +116,6 @@ export default function Dashboard(): React.JSX.Element {
         ))}
       </div>
     </div>
+    </>
   )
 }
