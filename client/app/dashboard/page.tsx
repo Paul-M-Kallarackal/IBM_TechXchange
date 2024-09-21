@@ -1,45 +1,47 @@
 "use client";
+
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp, DollarSign, Calendar } from 'lucide-react'
-import Navbar from '@/components/ui/Navbar';
+import { ChevronDown, ChevronUp, DollarSign, Calendar, Brain } from 'lucide-react'
+import Navbar from '@/components/ui/Navbar'
+import { useToast } from "@/hooks/use-toast"
 
 // Mock data for projects and tasks
-const projects = [
+const initialProjects = [
   {
     id: 1,
     name: "E-commerce Website Redesign",
-    priority: "High",
+    priority: "",
     pay: 5000,
     tasks: [
-      { id: 1, name: "Homepage redesign", deadline: "2023-07-15", priority: "High" },
-      { id: 2, name: "Product page optimization", deadline: "2023-07-20", priority: "Medium" },
-      { id: 3, name: "Checkout process improvement", deadline: "2023-07-25", priority: "High" },
+      { id: 1, name: "Homepage redesign", deadline: "2023-07-15", priority: "" },
+      { id: 2, name: "Product page optimization", deadline: "2023-07-20", priority: "" },
+      { id: 3, name: "Checkout process improvement", deadline: "2023-07-25", priority: "" },
     ]
   },
   {
     id: 2,
     name: "Mobile App Development",
-    priority: "Medium",
+    priority: "",
     pay: 8000,
     tasks: [
-      { id: 1, name: "UI/UX Design", deadline: "2023-08-01", priority: "High" },
-      { id: 2, name: "Frontend Development", deadline: "2023-08-15", priority: "High" },
-      { id: 3, name: "Backend Integration", deadline: "2023-08-30", priority: "Medium" },
+      { id: 1, name: "UI/UX Design", deadline: "2023-08-01", priority: "" },
+      { id: 2, name: "Frontend Development", deadline: "2023-08-15", priority: "" },
+      { id: 3, name: "Backend Integration", deadline: "2023-08-30", priority: "" },
     ]
   },
   {
     id: 3,
     name: "Content Marketing Campaign",
-    priority: "Low",
+    priority: "",
     pay: 3000,
     tasks: [
-      { id: 1, name: "Content Strategy", deadline: "2023-07-10", priority: "Medium" },
-      { id: 2, name: "Blog Post Writing", deadline: "2023-07-20", priority: "Low" },
-      { id: 3, name: "Social Media Schedule", deadline: "2023-07-25", priority: "Low" },
+      { id: 1, name: "Content Strategy", deadline: "2023-07-10", priority: "" },
+      { id: 2, name: "Blog Post Writing", deadline: "2023-07-20", priority: "" },
+      { id: 3, name: "Social Media Schedule", deadline: "2023-07-25", priority: "" },
     ]
   },
 ]
@@ -50,72 +52,125 @@ const priorityColors: { [key: string]: string } = {
   Low: "bg-green-500",
 }
 
-export default function Dashboard(): React.JSX.Element {
-  const [openProject, setOpenProject] = useState<number | null>(null)
+export default function Dashboard() {
+  const [projects, setProjects] = useState(initialProjects)
+  const [openProjects, setOpenProjects] = useState<number[]>([])
+  const { toast } = useToast()
+
+  const toggleProject = (projectId: number) => {
+    setOpenProjects(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    )
+  }
+
+  const handlePrioritize = (projectId: number) => {
+    toast({
+      title: "AI Prioritization",
+      description: "Analyzing project and assigning priorities...",
+    })
+
+    // Simulate AI prioritization
+    setTimeout(() => {
+      setProjects(prevProjects => 
+        prevProjects.map(project => {
+          if (project.id === projectId) {
+            const priorities = ["High", "Medium", "Low"]
+            return {
+              ...project,
+              priority: priorities[Math.floor(Math.random() * priorities.length)],
+              tasks: project.tasks.map(task => ({
+                ...task,
+                priority: priorities[Math.floor(Math.random() * priorities.length)]
+              }))
+            }
+          }
+          return project
+        })
+      )
+
+      toast({
+        title: "AI Prioritization Complete",
+        description: "Project and tasks have been prioritized.",
+      })
+    }, 2000)
+  }
 
   return (
-    <>
+    <div className="min-h-screen bg-purple-50 dark:bg-purple-900">
       <Navbar />
-
-    <div className="min-h-screen bg-gray-100 p-8">
-    
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
-          <Card key={project.id} className="w-full">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>{project.name}</span>
-                <Badge className={`${priorityColors[project.priority]} text-white`}>
-                  {project.priority}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center mb-4">
-                <DollarSign className="mr-2 h-4 w-4" />
-                <span className="font-semibold">${project.pay}</span>
-              </div>
-              <Collapsible
-                open={openProject === project.id}
-                onOpenChange={() => setOpenProject(openProject === project.id ? null : project.id)}
-              >
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    {openProject === project.id ? (
-                      <>
-                        Hide Tasks
-                        <ChevronUp className="h-4 w-4 ml-2" />
-                      </>
-                    ) : (
-                      <>
-                        Show Tasks
-                        <ChevronDown className="h-4 w-4 ml-2" />
-                      </>
-                    )}
+      <div className="container mx-auto py-10 px-4">
+        <h1 className="text-3xl font-bold mb-8 text-center text-purple-800 dark:text-purple-200">Current Projects and Tasks</h1>
+        <div className="space-y-6">
+          {projects.map((project) => (
+            <Card key={project.id} className="w-full bg-white dark:bg-purple-800">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center text-purple-800 dark:text-purple-200">
+                  <span>{project.name}</span>
+                  {project.priority && (
+                    <Badge className={`${priorityColors[project.priority]} text-white`}>
+                      {project.priority}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center mb-4">
+                  <DollarSign className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-300" />
+                  <span className="font-semibold text-purple-800 dark:text-purple-200">${project.pay}</span>
+                </div>
+                <div className="flex justify-between items-center mb-4">
+                  <Collapsible open={openProjects.includes(project.id)} onOpenChange={() => toggleProject(project.id)}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-700 dark:text-purple-200 dark:hover:bg-purple-600">
+                        {openProjects.includes(project.id) ? (
+                          <>
+                            Hide Tasks
+                            <ChevronUp className="h-4 w-4 ml-2" />
+                          </>
+                        ) : (
+                          <>
+                            Show Tasks
+                            <ChevronDown className="h-4 w-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  </Collapsible>
+                  <Button 
+                    onClick={() => handlePrioritize(project.id)}
+                    className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Brain className="mr-2 h-4 w-4" />
+                    Prioritize with AI
                   </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  {project.tasks.map((task) => (
-                    <div key={task.id} className="mb-4 p-4 bg-white rounded-lg shadow">
-                      <h3 className="font-semibold mb-2">{task.name}</h3>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          <span className="text-sm">{task.deadline}</span>
+                </div>
+                <Collapsible open={openProjects.includes(project.id)}>
+                  <CollapsibleContent className="mt-4 space-y-4">
+                    {project.tasks.map((task) => (
+                      <div key={task.id} className="p-4 bg-purple-100 dark:bg-purple-700 rounded-lg">
+                        <h3 className="font-semibold mb-2 text-purple-800 dark:text-purple-200">{task.name}</h3>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <Calendar className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-300" />
+                            <span className="text-sm text-purple-600 dark:text-purple-300">{task.deadline}</span>
+                          </div>
+                          {task.priority && (
+                            <Badge className={`${priorityColors[task.priority]} text-white`}>
+                              {task.priority}
+                            </Badge>
+                          )}
                         </div>
-                        <Badge className={`${priorityColors[task.priority]} text-white`}>
-                          {task.priority}
-                        </Badge>
                       </div>
-                    </div>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            </CardContent>
-          </Card>
-        ))}
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
-    </>
   )
 }
