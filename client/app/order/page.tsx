@@ -47,7 +47,7 @@ export default function Component() {
   const [acceptanceMessage, setAcceptanceMessage] = useState("")
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null)
   const { toast } = useToast()
-
+  console.log(selectedMailingList)
   const handleConnect = (mailingList: string) => {
     setSelectedMailingList(mailingList)
     setIsConnected(true)
