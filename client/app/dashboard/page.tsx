@@ -65,28 +65,47 @@ export default function Dashboard() {
     )
   }
 
-  const handlePrioritize = (projectId: number) => {
+  const handlePrioritize = async (projectId: number) => {
     toast({
       title: "AI Prioritization",
       description: "Analyzing project and assigning priorities...",
     })
 
-    // Simulate AI prioritization
-    setTimeout(() => {
+    const project = projects.find(p => p.id === projectId)
+    if (!project) return
+
+    const payload = {
+      [project.name]: Object.fromEntries(project.tasks.map(task => [task.name, task.name]))
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/classify_priority', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+
+      const data = await response.json()
+
       setProjects(prevProjects => 
-        prevProjects.map(project => {
-          if (project.id === projectId) {
-            const priorities = ["High", "Medium", "Low"]
+        prevProjects.map(p => {
+          if (p.id === projectId) {
             return {
-              ...project,
-              priority: priorities[Math.floor(Math.random() * priorities.length)],
-              tasks: project.tasks.map(task => ({
+              ...p,
+              priority: data.project_priority,
+              tasks: p.tasks.map(task => ({
                 ...task,
-                priority: priorities[Math.floor(Math.random() * priorities.length)]
+                priority: data[task.name]
               }))
             }
           }
-          return project
+          return p
         })
       )
 
@@ -94,7 +113,14 @@ export default function Dashboard() {
         title: "AI Prioritization Complete",
         description: "Project and tasks have been prioritized.",
       })
-    }, 2000)
+    } catch (error) {
+      console.error('Error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to prioritize project. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
