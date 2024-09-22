@@ -18,9 +18,10 @@ from langchain_community.vectorstores import Chroma
 from pinecone import Pinecone,ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
 
-os.environ['PINECONE_API_KEY'] = os.getenv("PINECONE_API_KEY")
+
 # Load environment variables
 load_dotenv()
+os.environ['PINECONE_API_KEY'] = os.getenv("PINECONE_API_KEY")
 project_id = os.getenv("PROJECT_ID")
 credentials = {
     "url": os.getenv("API_URL"),
