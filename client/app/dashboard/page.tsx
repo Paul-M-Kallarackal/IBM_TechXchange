@@ -5,46 +5,61 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp, DollarSign, Calendar, Brain } from 'lucide-react'
+import { ChevronDown, ChevronUp, Brain, Info, Loader2 } from 'lucide-react'
 import Navbar from '@/components/ui/Navbar'
 import { useToast } from "@/hooks/use-toast"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-// Mock data for projects and tasks
-const initialProjects = [
+// Mock email contents
+const mockEmails = [
   {
     id: 1,
-    name: "E-commerce Website Redesign",
-    priority: "",
-    pay: 5000,
-    tasks: [
-      { id: 1, name: "Homepage redesign", deadline: "2023-07-15", priority: "" },
-      { id: 2, name: "Product page optimization", deadline: "2023-07-20", priority: "" },
-      { id: 3, name: "Checkout process improvement", deadline: "2023-07-25", priority: "" },
-    ]
+    subject: "Help with social media marketing",
+    content: `Subject: Help with social media stuff
+Dear sir/madam,
+I hope this email finds you in good spirits. My name is Robert Johnson and I am the owner of Johnson's Hardware, a family-owned business that has been serving our community for over 50 years. I am writing to you today because I find myself in need of assistance with what the young folks call "social media marketing".
+...
+P.S. Do you know how to make the emails stop going into that spam folder? It's awfully inconvenient.`
   },
   {
     id: 2,
-    name: "Mobile App Development",
-    priority: "",
-    pay: 8000,
-    tasks: [
-      { id: 1, name: "UI/UX Design", deadline: "2023-08-01", priority: "" },
-      { id: 2, name: "Frontend Development", deadline: "2023-08-15", priority: "" },
-      { id: 3, name: "Backend Integration", deadline: "2023-08-30", priority: "" },
-    ]
+    subject: "Website redesign project",
+    content: `Subject: Urgent: Website Redesign Needed
+Hello,
+I'm reaching out because our company's website is in desperate need of a redesign. We're a mid-sized tech startup, and our current site is outdated and doesn't reflect our innovative spirit. We need a modern, responsive design that works well on mobile devices and showcases our products effectively.
+...
+Looking forward to your proposal. Thanks!`
   },
   {
     id: 3,
-    name: "Content Marketing Campaign",
-    priority: "",
-    pay: 3000,
-    tasks: [
-      { id: 1, name: "Content Strategy", deadline: "2023-07-10", priority: "" },
-      { id: 2, name: "Blog Post Writing", deadline: "2023-07-20", priority: "" },
-      { id: 3, name: "Social Media Schedule", deadline: "2023-07-25", priority: "" },
-    ]
-  },
+    subject: "E-commerce integration",
+    content: `Subject: Adding E-commerce to Our Site
+Hi there,
+We run a small boutique that specializes in handmade crafts, and we're looking to expand our business online. We need help integrating an e-commerce solution into our existing website. We want to be able to showcase our products, manage inventory, and process secure payments.
+...
+Can you help us make this transition to online sales? We're excited about the possibilities!`
+  }
 ]
+
+interface Task {
+  id: number;
+  description: string;
+  priority: string;
+  explanation: string;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  emailContent: string;
+  tasks: Task[];
+  isClassifying: boolean;
+}
 
 const priorityColors: { [key: string]: string } = {
   High: "bg-red-500",
@@ -53,7 +68,13 @@ const priorityColors: { [key: string]: string } = {
 }
 
 export default function Dashboard() {
-  const [projects, setProjects] = useState(initialProjects)
+  const [projects, setProjects] = useState<Project[]>(mockEmails.map(email => ({
+    id: email.id,
+    name: email.subject,
+    emailContent: email.content,
+    tasks: [],
+    isClassifying: false
+  })))
   const [openProjects, setOpenProjects] = useState<number[]>([])
   const { toast } = useToast()
 
@@ -65,26 +86,30 @@ export default function Dashboard() {
     )
   }
 
-  const handlePrioritize = async (projectId: number) => {
+  const handleClassifyTasks = async (projectId: number) => {
+    setProjects(prevProjects => 
+      prevProjects.map(p => 
+        p.id === projectId 
+          ? { ...p, isClassifying: true }
+          : p
+      )
+    )
+
     toast({
-      title: "AI Prioritization",
-      description: "Analyzing project and assigning priorities...",
+      title: "AI Task Classification",
+      description: "Analyzing email and classifying tasks...",
     })
 
     const project = projects.find(p => p.id === projectId)
     if (!project) return
 
-    const payload = {
-      [project.name]: Object.fromEntries(project.tasks.map(task => [task.name, task.name]))
-    }
-
     try {
-      const response = await fetch('http://localhost:5000/classify_priority', {
+      const response = await fetch('https://darling-flea-unbiased.ngrok-free.app/classify_tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email_content: project.emailContent }),
       })
 
       if (!response.ok) {
@@ -94,32 +119,31 @@ export default function Dashboard() {
       const data = await response.json()
 
       setProjects(prevProjects => 
-        prevProjects.map(p => {
-          if (p.id === projectId) {
-            return {
-              ...p,
-              priority: data.project_priority,
-              tasks: p.tasks.map(task => ({
-                ...task,
-                priority: data[task.name]
-              }))
-            }
-          }
-          return p
-        })
+        prevProjects.map(p => 
+          p.id === projectId 
+            ? { ...p, tasks: data.tasks, isClassifying: false }
+            : p
+        )
       )
 
       toast({
-        title: "AI Prioritization Complete",
-        description: "Project and tasks have been prioritized.",
+        title: "Task Classification Complete",
+        description: "Tasks have been classified for the project.",
       })
     } catch (error) {
       console.error('Error:', error)
       toast({
         title: "Error",
-        description: "Failed to prioritize project. Please try again.",
+        description: "Failed to classify tasks. Please try again.",
         variant: "destructive",
       })
+      setProjects(prevProjects => 
+        prevProjects.map(p => 
+          p.id === projectId 
+            ? { ...p, isClassifying: false }
+            : p
+        )
+      )
     }
   }
 
@@ -134,62 +158,76 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex justify-between items-center text-purple-800 dark:text-purple-200">
                   <span>{project.name}</span>
-                  {project.priority && (
-                    <Badge className={`${priorityColors[project.priority]} text-white`}>
-                      {project.priority}
-                    </Badge>
-                  )}
+                  <Button 
+                    onClick={() => handleClassifyTasks(project.id)}
+                    className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-300 transform hover:scale-105"
+                    disabled={project.isClassifying}
+                  >
+                    {project.isClassifying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Classifying...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="mr-2 h-4 w-4" />
+                        Classify Tasks with AI
+                      </>
+                    )}
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center mb-4">
-                  <DollarSign className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-300" />
-                  <span className="font-semibold text-purple-800 dark:text-purple-200">${project.pay}</span>
-                </div>
-                <div className="flex justify-between items-center mb-4">
-                  <Collapsible open={openProjects.includes(project.id)} onOpenChange={() => toggleProject(project.id)}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-700 dark:text-purple-200 dark:hover:bg-purple-600">
-                        {openProjects.includes(project.id) ? (
-                          <>
-                            Hide Tasks
-                            <ChevronUp className="h-4 w-4 ml-2" />
-                          </>
-                        ) : (
-                          <>
-                            Show Tasks
-                            <ChevronDown className="h-4 w-4 ml-2" />
-                          </>
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                  </Collapsible>
-                  <Button 
-                    onClick={() => handlePrioritize(project.id)}
-                    className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-300 transform hover:scale-105"
-                  >
-                    <Brain className="mr-2 h-4 w-4" />
-                    Prioritize with AI
-                  </Button>
-                </div>
-                <Collapsible open={openProjects.includes(project.id)}>
+                <Collapsible open={openProjects.includes(project.id)} onOpenChange={() => toggleProject(project.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-700 dark:text-purple-200 dark:hover:bg-purple-600">
+                      {openProjects.includes(project.id) ? (
+                        <>
+                          Hide Tasks
+                          <ChevronUp className="h-4 w-4 ml-2" />
+                        </>
+                      ) : (
+                        <>
+                          Show Tasks
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
                   <CollapsibleContent className="mt-4 space-y-4">
-                    {project.tasks.map((task) => (
-                      <div key={task.id} className="p-4 bg-purple-100 dark:bg-purple-700 rounded-lg">
-                        <h3 className="font-semibold mb-2 text-purple-800 dark:text-purple-200">{task.name}</h3>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center">
-                            <Calendar className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-300" />
-                            <span className="text-sm text-purple-600 dark:text-purple-300">{task.deadline}</span>
+                    {project.isClassifying ? (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="h-8 w-8 animate-spin text-purple-600 dark:text-purple-300" />
+                        <span className="ml-2 text-purple-600 dark:text-purple-300">Classifying tasks...</span>
+                      </div>
+                    ) : project.tasks.length > 0 ? (
+                      project.tasks.map((task) => (
+                        <div key={task.id} className="p-4 bg-purple-100 dark:bg-purple-700 rounded-lg flex justify-between items-center">
+                          <div className="flex-grow">
+                            <h3 className="font-semibold mb-2 text-purple-800 dark:text-purple-200">{task.description}</h3>
                           </div>
-                          {task.priority && (
+                          <div className="flex items-center space-x-2">
                             <Badge className={`${priorityColors[task.priority]} text-white`}>
                               {task.priority}
                             </Badge>
-                          )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="p-0">
+                                    <Info className="h-4 w-4 text-purple-600 dark:text-purple-300" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{task.explanation}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-center text-purple-600 dark:text-purple-300">No tasks classified yet. Click "Classify Tasks with AI" to get started.</p>
+                    )}
                   </CollapsibleContent>
                 </Collapsible>
               </CardContent>
