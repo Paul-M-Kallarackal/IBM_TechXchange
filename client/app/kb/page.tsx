@@ -17,27 +17,66 @@ import {
 } from "@/components/ui/dialog"
 
 const mockRepositories = [
-  { id: 1, name: "project-alpha", readme: "# Project Alpha\n\nThis is a sample README for Project Alpha." },
-  { id: 2, name: "project-beta", readme: "# Project Beta\n\nThis is a sample README for Project Beta." },
-  { id: 3, name: "project-gamma", readme: "# Project Gamma\n\nThis is a sample README for Project Gamma." },
+  { 
+    id: 1, 
+    title: "fact-gen",
+    name: "fact-gen", 
+    readme: `# fact-gen
+
+A simple npm package that generates random facts.
+
+## Installation
+
+\`\`\`bash
+npm install fact-gen
+\`\`\`
+
+
+## API
+
+### FactGenerator
+You can use this to generate random facts for different use-cases like loading screens in your video games or for placeholders in your Javascript applications
+
+
+#### Methods
+
+##### \`fact()\`
+
+Generates and returns a random fact.
+
+## Example
+
+\`\`\`javascript
+const FactGenerator = require('fact-gen');
+
+const generator = new FactGenerator();
+const randomFact = generator.fact();
+console.log(randomFact);
+\`\`\`
+
+Output:
+\`\`\`
+Did you know that a group of flamingos is called a 'flamboyance'? Talk about fabulous!
+\`\`\``
+  },
 ]
 
 const mockPDFs = [
-  { id: 1, name: "report.pdf", content: "This is a sample report." },
-  { id: 2, name: "documentation.pdf", content: "This is a sample documentation." },
-  { id: 3, name: "analysis.pdf", content: "This is a sample analysis." },
+  { id: 1, title: "Responsive Design", name: "c1.pdf", content: "Guide on responsive web design, explaining its importance, key components, and implementation techniques for optimal user experience across devices." },
+  { id: 2, title: "Performance", name: "c2.pdf",content: "Overview of website performance optimization, covering key metrics, techniques to improve load times, and tools for performance testing." },
+  { id: 3, title: "Accessibility", name: "c3.pdf", content: "Comprehensive guide on web accessibility, detailing its importance, key principles, and practical tips for creating inclusive websites usable by all, including those with disabilities." }
 ]
 
 export default function KnowledgeBase() {
   const [mode, setMode] = useState<'pdf' | 'code' | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedItem, setSelectedItem] = useState<any>(null)
+  type ItemType = { id: number, name: string, readme?: string, content?: string, title?: string }
+  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
   const [messages, setMessages] = useState<{ type: 'user' | 'bot', content: string }[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isThinking, setIsThinking] = useState(false)
   const [githubLink, setGithubLink] = useState('')
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-  const [hasResponded, setHasResponded] = useState(false)
+  const [isChatMode, setIsChatMode] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -48,10 +87,11 @@ export default function KnowledgeBase() {
 
   const handleSendMessage = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && selectedItem) {
       setMessages([...messages, { type: 'user', content: inputMessage }])
       setInputMessage('')
       setIsThinking(true)
+      setIsChatMode(true)
 
       try {
         const response = await fetch(`http://localhost:5000/ask_${mode}`, {
@@ -59,7 +99,7 @@ export default function KnowledgeBase() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ query: inputMessage, context: selectedItem }),
+          body: JSON.stringify({ query: inputMessage, name: selectedItem.name }),
         })
 
         if (!response.ok) {
@@ -67,8 +107,7 @@ export default function KnowledgeBase() {
         }
 
         const data = await response.json()
-        setMessages(prevMessages => [...prevMessages, { type: 'bot', content: data.response }])
-        setHasResponded(true)
+        setMessages(prevMessages => [...prevMessages, { type: 'bot', content: data.result }])
       } catch (error) {
         console.error('Error:', error)
         setMessages(prevMessages => [...prevMessages, { type: 'bot', content: 'Sorry, there was an error processing your request.' }])
@@ -80,7 +119,7 @@ export default function KnowledgeBase() {
 
   const handleRedo = () => {
     setMessages([])
-    setHasResponded(false)
+    setIsChatMode(false)
     setInputMessage('')
   }
 
@@ -137,71 +176,83 @@ export default function KnowledgeBase() {
                   key={item.id}
                   variant="ghost"
                   className="w-full justify-start mb-2 text-sm text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-700"
-                  onClick={() => setSelectedItem(item)}
+                  onClick={() => {
+                    setSelectedItem(item)
+                    setIsChatMode(false)
+                    setMessages([])
+                  }}
                 >
-                  {item.name}
+                  {item.title}
                 </Button>
               ))}
             </aside>
             <main className="flex-1 p-4 flex flex-col">
-              {selectedItem && (
-                <Card className="mb-4 bg-white dark:bg-purple-800">
-                  <CardHeader>
-                    <CardTitle className="text-purple-800 dark:text-purple-200">{selectedItem.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-purple-50 dark:bg-purple-900">
-                      <pre className="text-sm text-purple-800 dark:text-purple-200 whitespace-pre-wrap">
-                        {mode === 'code' ? selectedItem.readme : selectedItem.content}
-                      </pre>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              )}
-              <ScrollArea className="flex-1 mb-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 rounded-lg ${
-                        message.type === 'user' ? 'bg-purple-600 text-white ml-auto' : 'bg-purple-200 dark:bg-purple-700 dark:text-purple-100'
-                      } max-w-[80%] break-words text-sm`}
-                    >
-                      {message.content}
-                    </div>
-                  ))}
-                  {isThinking && (
-                    <div className="p-2 rounded-lg bg-purple-200 dark:bg-purple-700 dark:text-purple-100 max-w-[80%] break-words text-sm">
-                      Thinking...
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-              <footer className="border-t bg-purple-100 dark:bg-purple-800 p-2">
-                <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-                  <Input
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Type your message here..."
-                    className="flex-1 bg-white dark:bg-purple-700 dark:text-purple-100"
-                    disabled={hasResponded || isThinking}
-                  />
-                  {hasResponded ? (
-                    <Button type="button" size="icon" className="h-10 bg-purple-600 hover:bg-purple-700" onClick={handleRedo}>
-                      <RefreshCw className="h-4 w-4" />
-                      <span className="sr-only">Redo</span>
-                    </Button>
-                  ) : (
-                    <Button type="submit" size="icon" className="h-10 bg-purple-600 hover:bg-purple-700" disabled={isThinking}>
-                      <CornerDownLeft className="h-4 w-4" />
-                      <span className="sr-only">Send</span>
-                    </Button>
-                  )}
+              {selectedItem ? (
+                <>
+                  <Card className="mb-4 bg-white dark:bg-purple-800">
+                    <CardHeader>
+                      <CardTitle className="text-purple-800 dark:text-purple-200">{selectedItem.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {isChatMode ? (
+                        <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-purple-50 dark:bg-purple-900" ref={scrollAreaRef}>
+                          <div className="space-y-4">
+                            {messages.map((message, index) => (
+                              <div
+                                key={index}
+                                className={`p-2 rounded-lg ${
+                                  message.type === 'user' ? 'bg-purple-600 text-white ml-auto' : 'bg-purple-200 dark:bg-purple-700 dark:text-purple-100'
+                                } max-w-[80%] break-words text-sm`}
+                              >
+                                {message.content}
+                              </div>
+                            ))}
+                            {isThinking && (
+                              <div className="p-2 rounded-lg bg-purple-200 dark:bg-purple-700 dark:text-purple-100 max-w-[80%] break-words text-sm">
+                                Thinking...
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-purple-50 dark:bg-purple-900">
+                          <pre className="text-sm text-purple-800 dark:text-purple-200 whitespace-pre-wrap">
+                            {mode === 'code' ? selectedItem.readme : selectedItem.content}
+                          </pre>
+                        </ScrollArea>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <footer className="border-t bg-purple-100 dark:bg-purple-800 p-2">
+                    <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                      <Input
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        placeholder="Type your message here..."
+                        className="flex-1 bg-white dark:bg-purple-700 dark:text-purple-100"
+                      />
+                      {isChatMode ? (
+                        <Button type="button" size="icon" className="h-10 bg-purple-600 hover:bg-purple-700" onClick={handleRedo}>
+                          <RefreshCw className="h-4 w-4" />
+                          <span className="sr-only">Redo</span>
+                        </Button>
+                      ) : (
+                        <Button type="submit" size="icon" className="h-10 bg-purple-600 hover:bg-purple-700" disabled={isThinking}>
+                          <CornerDownLeft className="h-4 w-4" />
+                          <span className="sr-only">Send</span>
+                        </Button>
+                      )}
+                    </form>
+                  </footer>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <p className="mb-4 text-lg text-purple-800 dark:text-purple-200">Upload files to your AI based Knowledge Base</p>
                   <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
                     <DialogTrigger asChild>
-                      <Button size="icon" className="h-10 bg-purple-600 hover:bg-purple-700">
-                        <Upload className="h-4 w-4" />
-                        <span className="sr-only">Upload</span>
+                      <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-white dark:bg-purple-800">
@@ -236,8 +287,8 @@ export default function KnowledgeBase() {
                       )}
                     </DialogContent>
                   </Dialog>
-                </form>
-              </footer>
+                </div>
+              )}
             </main>
           </>
         )}

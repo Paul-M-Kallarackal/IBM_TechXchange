@@ -66,8 +66,8 @@ P.S. Do you know how to make the emails stop going into that spam folder? It's a
 
 export default function Component() {
   const [isConnected, setIsConnected] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedMailingList, setSelectedMailingList] = useState<string | null>(null)
+  console.log(selectedMailingList);
   const [orders, setOrders] = useState(initialOrders)
   const [selectedOrder, setSelectedOrder] = useState<null | (typeof initialOrders)[0]>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)

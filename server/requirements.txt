@@ -9,3 +9,4 @@ langchain-community
 GitPython
 chromadb
 pypdf
+langchain_pinecone
