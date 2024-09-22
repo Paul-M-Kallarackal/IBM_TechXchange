@@ -3,7 +3,9 @@ flask-cors
 requests
 ibm-watsonx-ai
 python-dotenv
-PyPDF2
 langchain
 langchain_ibm
-langchain_community
+langchain-community
+GitPython
+chromadb
+pypdf
