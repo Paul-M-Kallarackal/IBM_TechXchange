@@ -226,7 +226,7 @@ export default function Dashboard() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-center text-purple-600 dark:text-purple-300">No tasks classified yet. Click "Classify Tasks with AI" to get started.</p>
+                      <p className="text-center text-purple-600 dark:text-purple-300">No tasks classified yet. Click &quot;Classify Tasks with AI&quot; to get started.</p>
                     )}
                   </CollapsibleContent>
                 </Collapsible>
