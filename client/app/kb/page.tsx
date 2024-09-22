@@ -94,7 +94,7 @@ export default function KnowledgeBase() {
       setIsChatMode(true)
 
       try {
-        const response = await fetch(`http://localhost:5000/ask_${mode}`, {
+        const response = await fetch(`https://darling-flea-unbiased.ngrok-free.app/ask_${mode}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
